@@ -32,6 +32,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @param pageable the page and size information
      * @return a paginated list of active tasks (not COMPLETED or DELETED)
      */
+    @Query("SELECT t FROM Task t WHERE t.status != 'COMPLETED'")
     Page<Task> findActiveTasks(Pageable pageable);
 
     /**
@@ -50,7 +51,7 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @return a list of tasks matching the search query
      */
     @Query("SELECT t FROM Task t " +
-            "WHERE LOWER(t.title) LIKE %:query% OR LOWER(t.description) LIKE %:query%")
+            "WHERE LOWER(t.title) LIKE %:query% OR t.description LIKE %:query%")
     List<Task> findByNameOrDescription(String query);
 
     /**
@@ -101,7 +102,8 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
      * @param pageable the page and size information
      * @return a paginated list of tasks due on the given date
      */
-    Page<Task> findByDueDate(java.time.LocalDate dueDate, Pageable pageable);
+    @Query("SELECT t FROM Task t WHERE t.dueDate >= :start AND t.dueDate < :end ORDER BY t.priority")
+    Page<Task> findByDueDate(java.time.LocalDateTime start, java.time.LocalDateTime end, Pageable pageable);
 
     /**
      * Find all tasks sorted by priority (URGENT first) then due date.

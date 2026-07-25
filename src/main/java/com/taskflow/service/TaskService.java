@@ -2,7 +2,11 @@ package com.taskflow.service;
 
 import com.taskflow.dto.*;
 import com.taskflow.entity.Project;
+import com.taskflow.entity.Task;
+import com.taskflow.entity.User;
+import com.taskflow.repository.ProjectRepository;
 import com.taskflow.repository.TaskRepository;
+import com.taskflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,6 +22,8 @@ import java.util.List;
 public class TaskService {
 
     private final TaskRepository taskRepository;
+    private final ProjectRepository projectRepository;
+    private final UserRepository userRepository;
 
     /**
      * Create a new task with validation and persistence.
@@ -26,12 +32,33 @@ public class TaskService {
      * @return the created TaskResponseDTO with generated ID
      */
     public TaskResponseDTO create(TaskDTO dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("Task data cannot be null");
+        }
         // Validate input constraints
-        if (dto.getTitle() == null || dto.getTitle().isEmpty()) {
+        if (dto.getTitle() == null || dto.getTitle().trim().isEmpty()) {
             throw new IllegalArgumentException("Task title is required and cannot be empty");
         }
-        if (dto.getDescription() != null && dto.getDescription().isEmpty()) {
-            throw new IllegalArgumentException("Description must not contain only whitespace");
+
+        if (dto.getProjectId() == null) {
+            throw new IllegalArgumentException("Project ID is required. Please select or create a project first.");
+        }
+
+        // Resolve required project
+        Project project = projectRepository.findById(dto.getProjectId())
+                .orElseThrow(() -> new IllegalArgumentException("Project not found with id: " + dto.getProjectId()));
+
+        // Owner is the project owner
+        User owner = project.getOwner();
+        if (owner == null) {
+            throw new IllegalArgumentException("Associated project does not have a valid owner");
+        }
+
+        // Resolve optional assignee
+        User assignee = null;
+        if (dto.getAssigneeId() != null) {
+            assignee = userRepository.findById(dto.getAssigneeId())
+                    .orElseThrow(() -> new IllegalArgumentException("Assignee not found with id: " + dto.getAssigneeId()));
         }
 
         // Map DTO fields to entity, setting defaults for optional attributes
@@ -41,8 +68,9 @@ public class TaskService {
                 .status(dto.getStatus() != null ? dto.getStatus() : Task.TaskStatus.TODO)
                 .priority(dto.getPriority() != null ? dto.getPriority() : Task.TaskPriority.MEDIUM)
                 .dueDate(dto.getDueDate())
-                // Assignee will be set via a separate assignment endpoint; use null here
-                .assignee(null)
+                .project(project)
+                .owner(owner)
+                .assignee(assignee)
                 .tags(dto.getTags() != null ? dto.getTags() : "")
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -154,7 +182,9 @@ public class TaskService {
      * @return a Page of TaskResponseDTOs due on the specified date from PostgreSQL
      */
     public Page<TaskResponseDTO> findByDueDate(java.time.LocalDate dueDate, Pageable pageable) {
-        return taskRepository.findByDueDate(dueDate, pageable)
+        LocalDateTime start = dueDate.atStartOfDay();
+        LocalDateTime end = dueDate.plusDays(1).atStartOfDay();
+        return taskRepository.findByDueDate(start, end, pageable)
                 .map(this::convertToResponseDTO);
     }
 
@@ -238,14 +268,16 @@ public class TaskService {
      * @return a safe TaskResponseDTO for API responses
      */
     private TaskResponseDTO convertToResponseDTO(Task task) {
+        Task.TaskStatus entityStatus = task.getStatus() != null ? task.getStatus() : Task.TaskStatus.TODO;
+        Task.TaskPriority entityPriority = task.getPriority() != null ? task.getPriority() : Task.TaskPriority.MEDIUM;
         return TaskResponseDTO.builder()
                 .id(task.getId())
                 .title(task.getTitle() != null ? task.getTitle() : "")
                 .description(task.getDescription() != null ? task.getDescription() : "")
-                .status(task.getStatus() != null ? task.getStatus() : Task.TaskStatus.TODO)
-                .priority(task.getPriority() != null ? task.getPriority() : Task.TaskPriority.MEDIUM)
+                .status(TaskResponseDTO.TaskStatus.valueOf(entityStatus.name()))
+                .priority(TaskResponseDTO.TaskPriority.valueOf(entityPriority.name()))
                 .dueDate(task.getDueDate())
-                .assigneeId(task.getAssigneeId())
+                .assigneeId(task.getAssignee() != null ? task.getAssignee().getId() : null)
                 .tags(task.getTags() != null ? task.getTags() : "")
                 .build();
     }

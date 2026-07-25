@@ -22,6 +22,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
      * @param pageable the page and size information
      * @return a paginated list of projects owned by the given user
      */
+    @Query("SELECT p FROM Project p WHERE p.owner.id = :ownerId ORDER BY p.createdAt DESC")
     Page<Project> findByOwnerId(Long ownerId, Pageable pageable);
 
     /**
@@ -30,6 +31,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
      * @param pageable the page and size information
      * @return a paginated list of active projects
      */
+    @Query("SELECT p FROM Project p WHERE p.status = 'ACTIVE' ORDER BY p.createdAt DESC")
     Page<Project> findActiveProjects(Pageable pageable);
 
     /**
@@ -39,7 +41,7 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
      * @return a list of projects matching the search query
      */
     @Query("SELECT p FROM Project p " +
-            "WHERE LOWER(p.name) LIKE %:query% OR LOWER(p.description) LIKE %:query%")
+            "WHERE LOWER(p.name) LIKE %:query% OR p.description LIKE %:query%")
     List<Project> findByNameOrDescription(String query);
 
     /**
@@ -78,5 +80,6 @@ public interface ProjectRepository extends JpaRepository<Project, Long> {
      * @param ownerId the owner's user ID
      * @return an Optional containing the project if found, empty otherwise
      */
+    @Query("SELECT p FROM Project p WHERE p.id = :projectId AND p.owner.id = :ownerId")
     Optional<Project> findByProjectIdAndOwnerId(Long projectId, Long ownerId);
 }

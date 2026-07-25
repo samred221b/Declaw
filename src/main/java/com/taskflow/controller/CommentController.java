@@ -1,6 +1,7 @@
 package com.taskflow.controller;
 
 import com.taskflow.dto.*;
+import com.taskflow.service.CommentService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -25,9 +26,12 @@ public class CommentController {
      * @return ResponseEntity containing the created CommentResponseDTO with 201 status
      */
     @PostMapping("/tasks/{taskId}")
-    public ResponseEntity<CommentResponseDTO> create(@PathVariable Long taskId, @RequestBody CommentDTO dto) {
+    public ResponseEntity<CommentResponseDTO> create(
+            @PathVariable Long taskId,
+            @RequestParam Long userId,
+            @RequestBody CommentDTO dto) {
         try {
-            CommentResponseDTO newComment = commentService.create(dto);
+            CommentResponseDTO newComment = commentService.create(dto, taskId, userId);
             return new ResponseEntity<>(newComment, HttpStatus.CREATED);
         } catch (IllegalArgumentException e) {
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);

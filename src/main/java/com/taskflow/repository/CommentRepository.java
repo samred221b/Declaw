@@ -40,7 +40,7 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
      * @return a list of comments matching the search query
      */
     @Query("SELECT c FROM Comment c " +
-            "WHERE LOWER(c.content) LIKE %:query%")
+            "WHERE c.content LIKE %:query%")
     List<Comment> findByContent(String query);
 
     /**

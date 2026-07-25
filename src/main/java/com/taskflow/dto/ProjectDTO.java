@@ -24,32 +24,25 @@ public class ProjectDTO {
     private String name;
 
     /**
+     * ID of the user who owns/creates this project (required).
+     */
+    @jakarta.validation.constraints.NotNull(message = "Owner ID is required")
+    private Long ownerId;
+
+    /**
      * Description of the project (optional).
      */
     private String description;
 
     /**
      * Status: ACTIVE, ARCHIVED, or DELETED.
+     * Using fully qualified entity reference to avoid ambiguity with DTO's local ProjectStatus enum.
      */
-    private ProjectStatus status = ProjectStatus.ACTIVE;
+    private com.taskflow.entity.Project.ProjectStatus status = com.taskflow.entity.Project.ProjectStatus.ACTIVE;
 
     /**
      * Priority level of the project.
+     * Using fully qualified entity reference to avoid ambiguity with DTO's local ProjectPriority enum.
      */
-    private ProjectPriority priority = ProjectPriority.MEDIUM;
-
-    // Enum for project statuses
-    public enum ProjectStatus {
-        ACTIVE,
-        ARCHIVED,
-        DELETED
-    }
-
-    // Enum for project priorities
-    public enum ProjectPriority {
-        LOW,
-        MEDIUM,
-        HIGH,
-        CRITICAL
-    }
+    private com.taskflow.entity.Project.ProjectPriority priority = com.taskflow.entity.Project.ProjectPriority.MEDIUM;
 }

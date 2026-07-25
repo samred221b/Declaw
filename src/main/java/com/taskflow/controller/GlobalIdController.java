@@ -1,5 +1,6 @@
 package com.taskflow.controller;
 
+import com.taskflow.entity.GlobalId;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

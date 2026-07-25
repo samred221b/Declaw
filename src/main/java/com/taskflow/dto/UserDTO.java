@@ -45,13 +45,9 @@ public class UserDTO {
 
     /**
      * Account status: ACTIVE, INACTIVE, or SUSPENDED.
+     * Using fully qualified entity reference to avoid ambiguity with DTO's local UserStatus enum.
      */
-    private UserStatus status = UserStatus.ACTIVE;
+    private com.taskflow.entity.User.UserStatus status = com.taskflow.entity.User.UserStatus.ACTIVE;
 
-    // Enum for account statuses
-    public enum UserStatus {
-        ACTIVE,
-        INACTIVE,
-        SUSPENDED
-    }
+    // Note: The local UserStatus enum has been removed. Use only the entity.User.UserStatus type.
 }

@@ -2,7 +2,9 @@ package com.taskflow.service;
 
 import com.taskflow.dto.*;
 import com.taskflow.entity.Project;
+import com.taskflow.entity.User;
 import com.taskflow.repository.GlobalIdRepository;
+import com.taskflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -19,6 +21,7 @@ public class ProjectService {
 
     private final com.taskflow.repository.ProjectRepository projectRepository;
     private final GlobalIdRepository globalIdRepository;
+    private final UserRepository userRepository;
 
     /**
      * Create a new project with validation and persistence.
@@ -27,18 +30,27 @@ public class ProjectService {
      * @return the created ProjectResponseDTO with generated ID
      */
     public ProjectResponseDTO create(ProjectDTO dto) {
+        if (dto == null) {
+            throw new IllegalArgumentException("Project data cannot be null");
+        }
         // Validate input constraints
-        if (dto.getName() == null || dto.getName().isEmpty()) {
+        if (dto.getName() == null || dto.getName().trim().isEmpty()) {
             throw new IllegalArgumentException("Project name is required and cannot be empty");
         }
-        if (dto.getDescription() != null && dto.getDescription().isEmpty()) {
-            throw new IllegalArgumentException("Description must not contain only whitespace");
+
+        if (dto.getOwnerId() == null) {
+            throw new IllegalArgumentException("Owner ID is required to create a project.");
         }
+
+        // Resolve the owner
+        User owner = userRepository.findById(dto.getOwnerId())
+                .orElseThrow(() -> new IllegalArgumentException("Owner not found with id: " + dto.getOwnerId()));
 
         // Map DTO fields to entity, setting defaults for optional attributes
         Project project = Project.builder()
                 .name(dto.getName())
                 .description(dto.getDescription() != null ? dto.getDescription() : "")
+                .owner(owner)
                 .status(dto.getStatus() != null ? dto.getStatus() : Project.ProjectStatus.ACTIVE)
                 .priority(dto.getPriority() != null ? dto.getPriority() : Project.ProjectPriority.MEDIUM)
                 .createdAt(LocalDateTime.now())
@@ -170,12 +182,15 @@ public class ProjectService {
      * @return a safe ProjectResponseDTO for API responses
      */
     private ProjectResponseDTO convertToResponseDTO(Project project) {
+        Project.ProjectStatus entityStatus = project.getStatus() != null ? project.getStatus() : Project.ProjectStatus.ACTIVE;
+        Project.ProjectPriority entityPriority = project.getPriority() != null ? project.getPriority() : Project.ProjectPriority.MEDIUM;
         return ProjectResponseDTO.builder()
                 .id(project.getId())
                 .name(project.getName())
                 .description(project.getDescription() != null ? project.getDescription() : "")
-                .status(project.getStatus() != null ? project.getStatus() : Project.ProjectStatus.ACTIVE)
-                .priority(project.getPriority() != null ? project.getPriority() : Project.ProjectPriority.MEDIUM)
+                .ownerUsername(project.getOwner() != null ? project.getOwner().getUsername() : null)
+                .status(ProjectResponseDTO.ProjectStatus.valueOf(entityStatus.name()))
+                .priority(ProjectResponseDTO.ProjectPriority.valueOf(entityPriority.name()))
                 .build();
     }
 }

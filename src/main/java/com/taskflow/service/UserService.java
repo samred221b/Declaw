@@ -102,6 +102,7 @@ public class UserService {
         // Validate input
         if (dto.getEmail() != null && !dto.getEmail().isEmpty()) {
             userRepository.findByEmail(dto.getEmail())
+                    .filter(e -> !e.getId().equals(id))  // Exclude current user from duplicate check
                     .ifPresent(e -> { throw new IllegalArgumentException("Email already in use: " + dto.getEmail()); });
         }
 
@@ -147,5 +148,16 @@ public class UserService {
                 .lastName(user.getLastName())
                 .status(user.getStatus() != null ? user.getStatus() : User.UserStatus.ACTIVE)
                 .build();
+    }
+
+    /**
+     * Retrieve a paginated list of all users.
+     *
+     * @param pageable pagination information for results
+     * @return Page of UserResponseDTOs from PostgreSQL
+     */
+    public org.springframework.data.domain.Page<UserResponseDTO> getAll(org.springframework.data.domain.Pageable pageable) {
+        return userRepository.findAll(pageable)
+                .map(this::convertToResponseDTO);
     }
 }

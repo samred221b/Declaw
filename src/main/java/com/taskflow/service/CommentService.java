@@ -1,6 +1,12 @@
 package com.taskflow.service;
 
 import com.taskflow.dto.*;
+import com.taskflow.entity.Comment;
+import com.taskflow.entity.Task;
+import com.taskflow.entity.User;
+import com.taskflow.repository.CommentRepository;
+import com.taskflow.repository.TaskRepository;
+import com.taskflow.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -15,7 +21,9 @@ import java.util.List;
 @RequiredArgsConstructor
 public class CommentService {
 
-    private final com.taskflow.repository.CommentRepository commentRepository;
+    private final CommentRepository commentRepository;
+    private final TaskRepository taskRepository;
+    private final UserRepository userRepository;
 
     /**
      * Create a new comment with validation and persistence.
@@ -23,17 +31,24 @@ public class CommentService {
      * @param dto the CommentDTO containing creation data
      * @return the created CommentResponseDTO with generated ID
      */
-    public CommentResponseDTO create(CommentDTO dto) {
+    public CommentResponseDTO create(CommentDTO dto, Long taskId, Long userId) {
         // Validate input constraints
         if (dto.getContent() == null || dto.getContent().isEmpty()) {
             throw new IllegalArgumentException("Comment content is required and cannot be empty");
         }
 
+        // Resolve required task and user
+        Task task = taskRepository.findById(taskId)
+                .orElseThrow(() -> new IllegalArgumentException("Task not found with id: " + taskId));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new IllegalArgumentException("User not found with id: " + userId));
+
         // Map DTO fields to entity, setting defaults for optional attributes
         Comment comment = Comment.builder()
                 .content(dto.getContent())
+                .task(task)
+                .user(user)
                 .parentId(dto.getParentId())
-                .maxReplyDepth(dto.getMaxReplyDepth() != null ? dto.getMaxReplyDepth() : 5)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
                 .build();
@@ -181,8 +196,9 @@ public class CommentService {
         return CommentResponseDTO.builder()
                 .id(comment.getId())
                 .content(comment.getContent() != null ? comment.getContent() : "")
+                .username(comment.getUser() != null ? comment.getUser().getUsername() : "")
+                .taskId(comment.getTask() != null ? comment.getTask().getId() : null)
                 .parentId(comment.getParentId())
-                .maxReplyDepth(comment.getMaxReplyDepth())
                 .build();
     }
 }

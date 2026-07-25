@@ -1,6 +1,7 @@
 package com.taskflow.entity;
 
 import jakarta.persistence.*;
+import lombok.AccessLevel;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -24,6 +25,7 @@ public class GlobalId {
     /**
      * The actual ID value.
      */
+    @Id
     @Column(name = "value")
     private Long value;
 

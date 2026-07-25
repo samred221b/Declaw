@@ -13,7 +13,7 @@ import java.util.List;
 @Entity
 @Table(name = "tasks")
 @Builder(toBuilder = true)
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
 @AllArgsConstructor
 @Data
 public class Task implements Serializable {

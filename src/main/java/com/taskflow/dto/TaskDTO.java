@@ -32,15 +32,16 @@ public class TaskDTO {
 
     /**
      * Status: TODO, IN_PROGRESS, REVIEW, COMPLETED, or BLOCKED.
+     * Using fully qualified entity reference to avoid ambiguity with DTO's local TaskStatus enum.
      */
     @NotNull(message = "Task status is required")
-    private TaskStatus status = TaskStatus.TODO;
+    private com.taskflow.entity.Task.TaskStatus status = com.taskflow.entity.Task.TaskStatus.TODO;
 
     /**
      * Priority of the task.
      */
     @NotNull(message = "Task priority is required")
-    private TaskPriority priority = TaskPriority.MEDIUM;
+    private com.taskflow.entity.Task.TaskPriority priority = com.taskflow.entity.Task.TaskPriority.MEDIUM;
 
     /**
      * Due date for task completion (optional).
@@ -48,36 +49,19 @@ public class TaskDTO {
     private java.time.LocalDateTime dueDate;
 
     /**
-     * Assigned user ID (optional - will be populated by assignment endpoint).
+     * Project ID this task belongs to (required on creation).
      */
-    @NotNull(message = "Assignee is required")
+    @NotNull(message = "Project ID is required")
+    private Long projectId;
+
+    /**
+     * Assigned user ID (optional).
+     */
     private Long assigneeId;
 
     /**
      * Tags for categorization and filtering (comma-separated string).
      */
-    @NotBlank(message = "At least one tag is required")
     @Size(max = 500, message = "Tags must not exceed 500 characters")
     private String tags;
-
-    /**
-     * Enum for task workflow statuses.
-     */
-    public enum TaskStatus {
-        TODO,
-        IN_PROGRESS,
-        REVIEW,
-        COMPLETED,
-        BLOCKED
-    }
-
-    /**
-     * Enum for task priority levels.
-     */
-    public enum TaskPriority {
-        LOW,
-        MEDIUM,
-        HIGH,
-        URGENT
-    }
 }
